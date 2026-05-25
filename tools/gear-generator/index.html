@@ -3,18 +3,187 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gear Pair Generator — Geargen</title>
+  <title>Gear Pair Generator - Geargen</title>
   <link rel="stylesheet" href="../../css/style.css">
   <style>
-    .pair-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-    .toggles { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; margin-top: 1rem; font-size: 0.9rem; color: var(--fg-soft); }
-    .toggles label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
-    .warn { color: #b35; font-size: 0.9rem; margin-top: 0.5rem; }
-    .ok-note { color: #2a8;  font-size: 0.9rem; margin-top: 0.5rem; }
-    fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem 1rem 1rem; margin: 0; background: var(--bg-card); }
-    fieldset legend { font-size: 0.85rem; color: var(--fg-soft); padding: 0 0.4rem; }
-    .pair-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 640px) { .pair-grid { grid-template-columns: 1fr; } }
+    /* === Layout === */
+    main.workspace {
+      max-width: 1280px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      main.workspace { grid-template-columns: 1fr; }
+    }
+    .col-controls { position: sticky; top: 1rem; }
+    .col-visual { min-width: 0; }
+
+    /* === Cards === */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(94, 70, 30, 0.06), 0 4px 12px rgba(94, 70, 30, 0.04);
+      margin-bottom: 1rem;
+    }
+    .card-header {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #5c4329;
+      text-transform: uppercase;
+      background: linear-gradient(to bottom, #fdf8ee, #faf3e3);
+      border-radius: 10px 10px 0 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-body { padding: 0.9rem 1rem 1rem; }
+
+    /* === Inputs === */
+    .field { display: flex; flex-direction: column; margin-bottom: 0.6rem; font-size: 0.85rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { color: var(--fg-soft); margin-bottom: 0.25rem; font-weight: 500; }
+    .field .row { display: flex; align-items: center; gap: 0.5rem; }
+    .field input[type=number], .field select {
+      font: inherit;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      width: 100%;
+    }
+    .field input[type=range] { flex: 1; }
+    .field input:focus, .field select:focus {
+      outline: 2px solid #c19a6b;
+      outline-offset: -1px;
+      border-color: #a07845;
+    }
+
+    /* === Two-gear color tags === */
+    .tag {
+      display: inline-block;
+      width: 0.7rem; height: 0.7rem;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+    .tag.maple  { background: radial-gradient(circle at 30% 30%, #fde6c4, #f0d3a8 60%, #a07845); }
+    .tag.walnut { background: radial-gradient(circle at 30% 30%, #cda083, #b08968 60%, #5d3a1a); }
+
+    /* === Toggles === */
+    .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.8rem; font-size: 0.85rem; }
+    .toggles label { display: flex; align-items: center; gap: 0.45rem; cursor: pointer; color: var(--fg-soft); }
+    .toggles input { accent-color: #a07845; }
+
+    /* === Animation bar === */
+    .anim-bar {
+      display: flex; align-items: center; gap: 0.8rem;
+      padding: 0.6rem 1rem;
+      background: #fbf6ea;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    .anim-bar button.play {
+      width: 42px; height: 42px; border-radius: 50%;
+      border: none; cursor: pointer;
+      background: linear-gradient(135deg, #8b6f3a, #6b5429);
+      color: white; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(94, 70, 30, 0.25);
+    }
+    .anim-bar button.play:hover { transform: translateY(-1px); }
+    .anim-bar .speed { flex: 1; display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--fg-soft); }
+    .anim-bar .speed-val { font-variant-numeric: tabular-nums; min-width: 2.8rem; text-align: right; color: var(--fg); font-weight: 600; }
+
+    /* === Visualization === */
+    .stage {
+      background: linear-gradient(180deg, #fefbf4, #fbf6ea);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(94, 70, 30, 0.08);
+      padding: 1rem;
+      min-height: 320px;
+    }
+    .stage svg { display: block; width: 100%; height: auto; max-height: 65vh; }
+
+    /* === Stats grid === */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .stats-grid li {
+      background: #fbf6ea;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      font-size: 0.85rem;
+    }
+    .stats-grid .k {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--fg-soft);
+      margin-bottom: 0.15rem;
+    }
+    .stats-grid .v { font-weight: 600; font-variant-numeric: tabular-nums; color: #3a2814; }
+    .stats-grid li.g1 { border-left: 3px solid #a07845; }
+    .stats-grid li.g2 { border-left: 3px solid #5d3a1a; }
+    .stats-grid li.shared { border-left: 3px solid #2563eb; }
+
+    /* === Action bar === */
+    .actions-bar {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .actions-bar button {
+      font: inherit;
+      padding: 0.5rem 0.9rem;
+      border: 1px solid #a07845;
+      background: #a07845;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .actions-bar button.secondary {
+      background: white; color: #6b5429; border-color: #cdb592;
+    }
+    .actions-bar button:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(94, 70, 30, 0.15); }
+
+    /* === Warnings === */
+    .alerts { margin-top: 0.8rem; }
+    .alert {
+      padding: 0.55rem 0.8rem;
+      border-radius: 8px;
+      margin-bottom: 0.4rem;
+      font-size: 0.85rem;
+      border-left: 3px solid;
+    }
+    .alert.warn { background: #fff4e0; border-color: #d97706; color: #78350f; }
+    .alert.ok   { background: #ecfdf5; border-color: #10b981; color: #065f46; }
+
+    /* === Breadcrumb === */
+    .breadcrumb { padding: 1rem 1.5rem 0; max-width: 1280px; margin: 0 auto; }
+
+    /* === Print: hide everything except SVG === */
+    @media print {
+      header.site, footer.site, .col-controls, .anim-bar, .actions-bar, .alerts, .breadcrumb, .card-header, .tip { display: none !important; }
+      main.workspace { grid-template-columns: 1fr; padding: 0; max-width: none; }
+      .stage { border: none; box-shadow: none; padding: 0; background: white; }
+    }
+
+    .tip { font-size: 0.85rem; color: var(--fg-soft); margin-top: 0.8rem; padding: 0.6rem 0.8rem; background: #fbf6ea; border-radius: 6px; border-left: 3px solid #c19a6b; }
   </style>
 </head>
 <body>
@@ -28,84 +197,110 @@
     </div>
   </header>
 
-  <main>
-    <div class="breadcrumb"><a href="../../index.html">Tools</a> &rsaquo; Gear Pair Generator</div>
-    <h2>Gear Pair Generator</h2>
-    <p class="lead">Designs two meshing involute spur gears with different tooth counts. Print 1:1, glue to plywood, cut with a bandsaw.</p>
+  <div class="breadcrumb"><a href="../../index.html">Tools</a> &rsaquo; Gear Pair Generator</div>
 
-    <form class="controls pair-controls" id="gearForm" onsubmit="return false;">
-      <fieldset>
-        <legend>Shared (both gears)</legend>
-        <div class="field">
-          <label for="spacing">Tooth spacing (mm)</label>
-          <input type="number" id="spacing" min="3" max="40" step="0.5" value="10">
-        </div>
-        <div class="field">
-          <label for="pressure">Pressure angle (deg)</label>
-          <input type="number" id="pressure" min="10" max="30" step="0.5" value="20">
-        </div>
-        <div class="field">
-          <label for="backlash">Backlash (mm)</label>
-          <input type="number" id="backlash" min="0" max="2" step="0.05" value="0.2">
-        </div>
-        <div class="field">
-          <label for="material">Material thickness (mm)</label>
-          <input type="number" id="material" min="3" max="25" step="0.5" value="6">
-        </div>
-      </fieldset>
+  <main class="workspace">
+    <!-- LEFT: controls -->
+    <div class="col-controls">
+      <form id="gearForm" onsubmit="return false;">
 
-      <fieldset>
-        <legend>Gear 1 (left)</legend>
-        <div class="field">
-          <label for="teeth1">Tooth count</label>
-          <input type="number" id="teeth1" min="6" max="200" step="1" value="12">
+        <div class="card">
+          <div class="card-header">Shared parameters</div>
+          <div class="card-body">
+            <div class="field">
+              <label for="spacing">Tooth spacing (mm)</label>
+              <input type="number" id="spacing" min="3" max="40" step="0.5" value="10">
+            </div>
+            <div class="field">
+              <label for="pressure">Pressure angle (deg)</label>
+              <input type="number" id="pressure" min="10" max="30" step="0.5" value="20">
+            </div>
+            <div class="field">
+              <label for="backlash">Backlash (mm)</label>
+              <input type="number" id="backlash" min="0" max="2" step="0.05" value="0.2">
+            </div>
+            <div class="field">
+              <label for="material">Material thickness (mm)</label>
+              <input type="number" id="material" min="3" max="25" step="0.5" value="6">
+            </div>
+          </div>
         </div>
-        <div class="field">
-          <label for="bore1">Bore diameter (mm)</label>
-          <input type="number" id="bore1" min="0" max="50" step="0.5" value="6">
-        </div>
-      </fieldset>
 
-      <fieldset>
-        <legend>Gear 2 (right)</legend>
-        <div class="field">
-          <label for="teeth2">Tooth count</label>
-          <input type="number" id="teeth2" min="6" max="200" step="1" value="30">
+        <div class="card">
+          <div class="card-header"><span><span class="tag maple"></span>Gear 1 (maple)</span></div>
+          <div class="card-body">
+            <div class="field">
+              <label for="teeth1">Tooth count</label>
+              <input type="number" id="teeth1" min="6" max="200" step="1" value="12">
+            </div>
+            <div class="field">
+              <label for="bore1">Bore diameter (mm)</label>
+              <input type="number" id="bore1" min="0" max="50" step="0.5" value="6">
+            </div>
+          </div>
         </div>
-        <div class="field">
-          <label for="bore2">Bore diameter (mm)</label>
-          <input type="number" id="bore2" min="0" max="50" step="0.5" value="6">
-        </div>
-      </fieldset>
-    </form>
 
-    <div class="toggles">
-      <label><input type="checkbox" id="tShowPitch" checked> Pitch circles</label>
-      <label><input type="checkbox" id="tShowGrid"> 1 cm grid</label>
-      <label><input type="checkbox" id="tShowLOC"> Line of contact</label>
-      <label><input type="checkbox" id="tPrintMode"> Print mode (one gear at a time)</label>
+        <div class="card">
+          <div class="card-header"><span><span class="tag walnut"></span>Gear 2 (walnut)</span></div>
+          <div class="card-body">
+            <div class="field">
+              <label for="teeth2">Tooth count</label>
+              <input type="number" id="teeth2" min="6" max="200" step="1" value="30">
+            </div>
+            <div class="field">
+              <label for="bore2">Bore diameter (mm)</label>
+              <input type="number" id="bore2" min="0" max="50" step="0.5" value="6">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Display</div>
+          <div class="card-body">
+            <div class="toggles">
+              <label><input type="checkbox" id="tShowPitch" checked> Pitch circles</label>
+              <label><input type="checkbox" id="tShowLOC"> Line of contact</label>
+              <label><input type="checkbox" id="tShowGrid"> 1 cm grid</label>
+              <label><input type="checkbox" id="tShowAnnot" checked> Labels</label>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
 
-    <div class="actions">
-      <button id="genBtn">Generate</button>
-      <button class="secondary" id="dlBoth">Download pair SVG</button>
-      <button class="secondary" id="dlGear1">Download gear 1 SVG</button>
-      <button class="secondary" id="dlGear2">Download gear 2 SVG</button>
-      <button class="secondary" id="printBtn">Print</button>
+    <!-- RIGHT: visualization -->
+    <div class="col-visual">
+
+      <div class="anim-bar">
+        <button class="play" id="playBtn" title="Play / pause">&#9658;</button>
+        <div class="speed">
+          <span>Speed</span>
+          <input type="range" id="speed" min="-180" max="180" step="5" value="40">
+          <span class="speed-val" id="speedVal">40&deg;/s</span>
+        </div>
+        <button class="play" id="resetBtn" title="Reset rotation" style="background:#cdb592;">&#x21BA;</button>
+      </div>
+
+      <div class="stage" id="stage"></div>
+
+      <div class="actions-bar">
+        <button class="secondary" id="dlBoth">Download pair SVG</button>
+        <button class="secondary" id="dlGear1">Download gear 1</button>
+        <button class="secondary" id="dlGear2">Download gear 2</button>
+        <button id="printBtn">Print template</button>
+      </div>
+
+      <div class="alerts" id="alerts"></div>
+
+      <div class="card" style="margin-top: 1rem;">
+        <div class="card-header">Computed dimensions</div>
+        <div class="card-body">
+          <ul class="stats-grid" id="stats"></ul>
+        </div>
+      </div>
+
+      <div class="tip">Print uses monochrome outlines (no fills) so a bandsaw can follow the line cleanly. Verify the print scale by measuring a pitch circle with a ruler &mdash; should match the value shown above.</div>
     </div>
-
-    <div id="warnings"></div>
-
-    <div class="output" id="output" hidden>
-      <div class="stats" id="stats"></div>
-      <div id="svgHost"></div>
-      <div id="svgHost2" hidden></div>
-    </div>
-
-    <h3>How to use the templates</h3>
-    <p>Print this page at 100% scale (not "fit to page"). Verify by measuring a pitch circle against the printed gear with a ruler. Glue each gear onto your plywood with a thin layer of adhesive, drill the bore holes first, then cut along the outline with a bandsaw. Sand to the line.</p>
-    <p>For 6&nbsp;mm plywood, tooth spacing under 7&nbsp;mm will produce fragile teeth that can chip. The tool warns you if your settings are too aggressive.</p>
-    <p>Two gears mesh only if they share the same <strong>tooth spacing</strong> and <strong>pressure angle</strong>. The center distance between their shafts is shown below.</p>
   </main>
 
   <footer class="site">
@@ -115,15 +310,17 @@
   <script type="module">
     import { renderGearPair, renderSingleGear } from './gear.js';
 
-    const $ = (id) => document.getElementById(id);
-    const out = $('output'), svgHost = $('svgHost'), svgHost2 = $('svgHost2');
-    const statsEl = $('stats'), warnings = $('warnings');
+    const $ = id => document.getElementById(id);
+    const stage = $('stage'), statsEl = $('stats'), alertsEl = $('alerts');
+
+    let lastResult = null;     // last pair result (svg, g1, g2, cd, ratio, gear2PhaseDeg)
+    let baseTheta1 = 0;        // gear 1 base rotation (degrees), advanced by animation
 
     function getInputs() {
-      const spacing = Math.max(3, parseFloat($('spacing').value) || 10);   // circular pitch
+      const spacing = Math.max(3, parseFloat($('spacing').value) || 10);
       return {
         spacing,
-        m: spacing / Math.PI,                                              // module = p / π
+        m: spacing / Math.PI,
         alphaDeg: Math.max(10, parseFloat($('pressure').value) || 20),
         backlash: Math.max(0, parseFloat($('backlash').value) || 0),
         material: Math.max(0, parseFloat($('material').value) || 6),
@@ -134,75 +331,100 @@
         showPitch: $('tShowPitch').checked,
         showGrid: $('tShowGrid').checked,
         showLineOfContact: $('tShowLOC').checked,
-        printMode: $('tPrintMode').checked,
+        showAnnotations: $('tShowAnnot').checked,
       };
     }
-
-    function fmt(n, d = 2) { return n.toFixed(d) + ' mm'; }
+    const fmt = (n, d=2) => n.toFixed(d) + ' mm';
 
     function generate() {
       const i = getInputs();
-      const { svg, g1, g2, centerDistance, ratio } = renderGearPair(
-        i.N1, i.N2, i.m, i.alphaDeg,
-        {
-          backlash: i.backlash,
-          bore1: i.bore1,
-          bore2: i.bore2,
-          showPitch: i.showPitch,
-          showGrid: i.showGrid,
-          showLineOfContact: i.showLineOfContact,
-        }
-      );
-
-      if (i.printMode) {
-        // Render each gear standalone, stacked for printing.
-        const g1Svg = renderSingleGear(i.N1, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore1, showPitch: i.showPitch });
-        const g2Svg = renderSingleGear(i.N2, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore2, showPitch: i.showPitch });
-        svgHost.innerHTML = g1Svg.svg;
-        svgHost2.innerHTML = g2Svg.svg;
-        svgHost2.hidden = false;
-      } else {
-        svgHost.innerHTML = svg;
-        svgHost2.hidden = true;
-        svgHost2.innerHTML = '';
-      }
-      out.hidden = false;
-
-      // Stats
-      statsEl.innerHTML = `
-        <div><span class="k">Gear 1 pitch dia</span><span class="v">${fmt(g1.rp * 2)}</span></div>
-        <div><span class="k">Gear 1 outside dia</span><span class="v">${fmt(g1.raEff * 2)}</span></div>
-        <div><span class="k">Gear 2 pitch dia</span><span class="v">${fmt(g2.rp * 2)}</span></div>
-        <div><span class="k">Gear 2 outside dia</span><span class="v">${fmt(g2.raEff * 2)}</span></div>
-        <div><span class="k">Center distance</span><span class="v">${fmt(centerDistance)}</span></div>
-        <div><span class="k">Ratio (G2/G1)</span><span class="v">${ratio.toFixed(3)}:1</span></div>
-        <div><span class="k">Module</span><span class="v">${i.m.toFixed(3)} mm</span></div>
-        <div><span class="k">Circular pitch</span><span class="v">${fmt(i.spacing)}</span></div>
-      `;
-
-      // Warnings
-      const w = [];
-      // Tooth fragility on thin plywood: tooth thickness at pitch ≈ p/2, depth ≈ 2.25*m.
-      // Recommend tooth spacing >= material thickness + 2 mm so flank thickness > material.
-      if (i.spacing < i.material + 1) {
-        w.push(`<div class="warn">Tooth spacing (${i.spacing} mm) is small relative to material thickness (${i.material} mm). Teeth may snap. Try spacing &ge; ${(i.material + 2).toFixed(1)} mm.</div>`);
-      }
-      if (g1.pointedTip || g2.pointedTip) {
-        w.push(`<div class="warn">One or both gears have <strong>pointed teeth</strong> at this tooth count + pressure angle. Increase tooth count or pressure angle, or accept the pointed profile.</div>`);
-      }
-      if (i.N1 < 12 && i.alphaDeg < 20) {
-        w.push(`<div class="warn">Gear 1 has ${i.N1} teeth at ${i.alphaDeg}&deg; pressure angle &mdash; risk of undercut interference. Bump pressure angle to 20&deg;+ or increase tooth count.</div>`);
-      }
-      if (i.N2 < 12 && i.alphaDeg < 20) {
-        w.push(`<div class="warn">Gear 2 has ${i.N2} teeth at ${i.alphaDeg}&deg; pressure angle &mdash; risk of undercut interference.</div>`);
-      }
-      if (w.length === 0) {
-        w.push(`<div class="ok-note">Geometry looks good for ${i.material} mm plywood.</div>`);
-      }
-      warnings.innerHTML = w.join('');
+      lastResult = renderGearPair(i.N1, i.N2, i.m, i.alphaDeg, {
+        style: 'preview',
+        backlash: i.backlash,
+        bore1: i.bore1, bore2: i.bore2,
+        showPitch: i.showPitch,
+        showGrid: i.showGrid,
+        showLineOfContact: i.showLineOfContact,
+        showAnnotations: i.showAnnotations,
+      });
+      stage.innerHTML = lastResult.svg;
+      applyRotation();
+      renderStats(i, lastResult);
+      renderAlerts(i, lastResult);
     }
 
-    function downloadSvg(svgString, filename) {
+    function applyRotation() {
+      if (!lastResult) return;
+      const { g1, g2, centerDistance, gear2PhaseDeg } = lastResult;
+      // External mesh: gears rotate in opposite directions; gear 2 speed = -N1/N2 of gear 1.
+      const theta1 = baseTheta1;
+      const theta2 = gear2PhaseDeg - theta1 * (g1.N / g2.N);
+      const el1 = document.getElementById('gear1Group');
+      const el2 = document.getElementById('gear2Group');
+      if (el1) el1.setAttribute('transform', `translate(0 0) rotate(${theta1})`);
+      if (el2) el2.setAttribute('transform', `translate(${centerDistance} 0) rotate(${theta2})`);
+    }
+
+    function renderStats(i, r) {
+      statsEl.innerHTML = `
+        <li class="g1"><span class="k">Gear 1 pitch dia</span><span class="v">${fmt(r.g1.rp * 2)}</span></li>
+        <li class="g1"><span class="k">Gear 1 outside dia</span><span class="v">${fmt(r.g1.raEff * 2)}</span></li>
+        <li class="g1"><span class="k">Gear 1 root dia</span><span class="v">${fmt(r.g1.rf * 2)}</span></li>
+        <li class="g2"><span class="k">Gear 2 pitch dia</span><span class="v">${fmt(r.g2.rp * 2)}</span></li>
+        <li class="g2"><span class="k">Gear 2 outside dia</span><span class="v">${fmt(r.g2.raEff * 2)}</span></li>
+        <li class="g2"><span class="k">Gear 2 root dia</span><span class="v">${fmt(r.g2.rf * 2)}</span></li>
+        <li class="shared"><span class="k">Center distance</span><span class="v">${fmt(r.centerDistance)}</span></li>
+        <li class="shared"><span class="k">Ratio (G2/G1)</span><span class="v">${r.ratio.toFixed(3)} : 1</span></li>
+        <li class="shared"><span class="k">Module</span><span class="v">${i.m.toFixed(3)} mm</span></li>
+        <li class="shared"><span class="k">Circular pitch</span><span class="v">${fmt(i.spacing)}</span></li>
+      `;
+    }
+
+    function renderAlerts(i, r) {
+      const w = [];
+      if (i.spacing < i.material + 1) {
+        w.push(`<div class="alert warn">Tooth spacing (${i.spacing} mm) is small for ${i.material} mm plywood. Try &ge; ${(i.material + 2).toFixed(1)} mm to avoid fragile teeth.</div>`);
+      }
+      if (r.g1.pointedTip || r.g2.pointedTip) {
+        w.push(`<div class="alert warn">Pointed teeth at this tooth count + pressure angle. Increase pressure angle or tooth count.</div>`);
+      }
+      if (i.N1 < 12 && i.alphaDeg < 20) {
+        w.push(`<div class="alert warn">Gear 1 has only ${i.N1} teeth at ${i.alphaDeg}&deg; &mdash; risk of undercut. Try 20&deg;+.</div>`);
+      }
+      if (i.N2 < 12 && i.alphaDeg < 20) {
+        w.push(`<div class="alert warn">Gear 2 has only ${i.N2} teeth at ${i.alphaDeg}&deg; &mdash; risk of undercut.</div>`);
+      }
+      if (w.length === 0) w.push(`<div class="alert ok">Geometry looks good for ${i.material} mm plywood.</div>`);
+      alertsEl.innerHTML = w.join('');
+    }
+
+    /* === Animation === */
+    let playing = false, lastTime = 0, speedDegPerSec = 40;
+
+    function tick(t) {
+      if (!playing) return;
+      if (lastTime) {
+        baseTheta1 = (baseTheta1 + (t - lastTime) * 0.001 * speedDegPerSec) % 360;
+        applyRotation();
+      }
+      lastTime = t;
+      requestAnimationFrame(tick);
+    }
+
+    $('playBtn').addEventListener('click', () => {
+      playing = !playing;
+      $('playBtn').innerHTML = playing ? '&#10074;&#10074;' : '&#9658;';
+      lastTime = 0;
+      if (playing) requestAnimationFrame(tick);
+    });
+    $('resetBtn').addEventListener('click', () => { baseTheta1 = 0; applyRotation(); });
+    $('speed').addEventListener('input', () => {
+      speedDegPerSec = parseFloat($('speed').value) || 0;
+      $('speedVal').textContent = `${speedDegPerSec.toFixed(0)}°/s`;
+    });
+
+    /* === Download === */
+    function dl(svgString, filename) {
       const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -210,32 +432,30 @@
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
-
-    $('genBtn').addEventListener('click', generate);
     $('dlBoth').addEventListener('click', () => {
       const i = getInputs();
       const { svg } = renderGearPair(i.N1, i.N2, i.m, i.alphaDeg, {
-        backlash: i.backlash, bore1: i.bore1, bore2: i.bore2,
-        showPitch: i.showPitch, showGrid: i.showGrid, showLineOfContact: i.showLineOfContact,
+        style: 'print', backlash: i.backlash, bore1: i.bore1, bore2: i.bore2,
+        showPitch: false, showGrid: false, showLineOfContact: false, showAnnotations: false,
       });
-      downloadSvg(svg, `gear_pair_${i.N1}T_${i.N2}T_p${i.spacing}mm.svg`);
+      dl(svg, `gear_pair_${i.N1}T_${i.N2}T_p${i.spacing}mm.svg`);
     });
     $('dlGear1').addEventListener('click', () => {
       const i = getInputs();
-      const { svg } = renderSingleGear(i.N1, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore1, showPitch: i.showPitch });
-      downloadSvg(svg, `gear1_${i.N1}T_p${i.spacing}mm.svg`);
+      const { svg } = renderSingleGear(i.N1, i.m, i.alphaDeg, { style:'print', backlash:i.backlash, boreDiameter:i.bore1, showPitch:false });
+      dl(svg, `gear1_${i.N1}T_p${i.spacing}mm.svg`);
     });
     $('dlGear2').addEventListener('click', () => {
       const i = getInputs();
-      const { svg } = renderSingleGear(i.N2, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore2, showPitch: i.showPitch });
-      downloadSvg(svg, `gear2_${i.N2}T_p${i.spacing}mm.svg`);
+      const { svg } = renderSingleGear(i.N2, i.m, i.alphaDeg, { style:'print', backlash:i.backlash, boreDiameter:i.bore2, showPitch:false });
+      dl(svg, `gear2_${i.N2}T_p${i.spacing}mm.svg`);
     });
     $('printBtn').addEventListener('click', () => window.print());
 
-    // Re-render on any input change
-    document.querySelectorAll('#gearForm input, #gearForm select, .toggles input').forEach(el => {
-      el.addEventListener('change', generate);
+    /* === Live update === */
+    document.querySelectorAll('#gearForm input').forEach(el => {
       el.addEventListener('input', generate);
+      el.addEventListener('change', generate);
     });
 
     generate();
