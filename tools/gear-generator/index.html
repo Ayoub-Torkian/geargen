@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gear Template Generator — Geargen</title>
+  <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+  <header class="site">
+    <div class="inner">
+      <h1>Geargen</h1>
+      <nav>
+        <a href="../../index.html">Tools</a>
+        <a href="https://github.com/Ayoub-Torkian/geargen">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="breadcrumb"><a href="../../index.html">Tools</a> &rsaquo; Gear Template Generator</div>
+    <h2>Gear Template Generator</h2>
+    <p class="lead">Print involute spur-gear templates at 1:1 scale. Set the tooth count, module (size per tooth), and pressure angle, then print and glue to your stock.</p>
+
+    <form class="controls" id="gearForm" onsubmit="return false;">
+      <div class="field">
+        <label for="teeth">Tooth count (N)</label>
+        <input type="number" id="teeth" min="6" max="200" step="1" value="20">
+      </div>
+      <div class="field">
+        <label for="module">Module (mm per tooth)</label>
+        <input type="number" id="module" min="0.5" max="20" step="0.1" value="3">
+      </div>
+      <div class="field">
+        <label for="pressure">Pressure angle (deg)</label>
+        <select id="pressure">
+          <option value="14.5">14.5&deg;</option>
+          <option value="20" selected>20&deg;</option>
+          <option value="25">25&deg;</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="bore">Bore diameter (mm)</label>
+        <input type="number" id="bore" min="0" max="50" step="0.5" value="6">
+      </div>
+    </form>
+
+    <div class="actions">
+      <button id="genBtn">Generate</button>
+      <button class="secondary" id="downloadSvg">Download SVG</button>
+      <button class="secondary" id="printBtn">Print</button>
+    </div>
+
+    <div class="output" id="output" hidden>
+      <div class="stats" id="stats"></div>
+      <div id="svgHost"></div>
+    </div>
+
+    <h3>Notes</h3>
+    <p>The template prints at true size — 1&nbsp;mm in the SVG equals 1&nbsp;mm on paper, provided your printer is set to 100% (not "fit to page"). Verify with a ruler against the cross-hairs after the first print.</p>
+    <p>Two meshing gears must share the same <em>module</em> and <em>pressure angle</em>. The center distance between them is <code>(N₁&nbsp;+&nbsp;N₂)&nbsp;×&nbsp;module&nbsp;/&nbsp;2</code>.</p>
+  </main>
+
+  <footer class="site">
+    Inspired by <a href="https://woodgears.ca">woodgears.ca</a>. Source on <a href="https://github.com/Ayoub-Torkian/geargen">GitHub</a>.
+  </footer>
+
+  <script type="module">
+    import { renderGearSVG } from './gear.js';
+
+    const $ = (id) => document.getElementById(id);
+    const output = $('output');
+    const svgHost = $('svgHost');
+    const statsEl = $('stats');
+
+    function getInputs() {
+      return {
+        N: Math.max(6, Math.min(200, parseInt($('teeth').value, 10) || 20)),
+        m: Math.max(0.5, Math.min(20, parseFloat($('module').value) || 3)),
+        alphaDeg: parseFloat($('pressure').value) || 20,
+        bore: Math.max(0, parseFloat($('bore').value) || 0),
+      };
+    }
+
+    function generate() {
+      const { N, m, alphaDeg, bore } = getInputs();
+      const { svg, geometry: g } = renderGearSVG(N, m, alphaDeg, { boreDiameter: bore });
+      svgHost.innerHTML = svg;
+      output.hidden = false;
+
+      const fmt = (n, d = 2) => n.toFixed(d) + ' mm';
+      statsEl.innerHTML = `
+        <div><span class="k">Pitch dia</span><span class="v">${fmt(g.rp * 2)}</span></div>
+        <div><span class="k">Outside dia</span><span class="v">${fmt(g.raEff * 2)}</span></div>
+        <div><span class="k">Root dia</span><span class="v">${fmt(g.rf * 2)}</span></div>
+        <div><span class="k">Base dia</span><span class="v">${fmt(g.rb * 2)}</span></div>
+        <div><span class="k">Circular pitch</span><span class="v">${fmt(Math.PI * g.m)}</span></div>
+        ${g.pointedTip ? '<div><span class="k">Warning</span><span class="v" style="color:#b35;">Pointed teeth at this N</span></div>' : ''}
+      `;
+    }
+
+    function downloadSvg() {
+      const { N, m, alphaDeg, bore } = getInputs();
+      const { svg } = renderGearSVG(N, m, alphaDeg, { boreDiameter: bore });
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gear_N${N}_m${m}_a${alphaDeg}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    $('genBtn').addEventListener('click', generate);
+    $('downloadSvg').addEventListener('click', downloadSvg);
+    $('printBtn').addEventListener('click', () => window.print());
+
+    // Generate once on load
+    generate();
+  </script>
+</body>
+</html>
