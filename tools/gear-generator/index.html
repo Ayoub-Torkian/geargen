@@ -3,8 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gear Template Generator — Geargen</title>
+  <title>Gear Pair Generator — Geargen</title>
   <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .pair-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .toggles { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; margin-top: 1rem; font-size: 0.9rem; color: var(--fg-soft); }
+    .toggles label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+    .warn { color: #b35; font-size: 0.9rem; margin-top: 0.5rem; }
+    .ok-note { color: #2a8;  font-size: 0.9rem; margin-top: 0.5rem; }
+    fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem 1rem 1rem; margin: 0; background: var(--bg-card); }
+    fieldset legend { font-size: 0.85rem; color: var(--fg-soft); padding: 0 0.4rem; }
+    .pair-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .pair-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
   <header class="site">
@@ -18,47 +29,83 @@
   </header>
 
   <main>
-    <div class="breadcrumb"><a href="../../index.html">Tools</a> &rsaquo; Gear Template Generator</div>
-    <h2>Gear Template Generator</h2>
-    <p class="lead">Print involute spur-gear templates at 1:1 scale. Set the tooth count, module (size per tooth), and pressure angle, then print and glue to your stock.</p>
+    <div class="breadcrumb"><a href="../../index.html">Tools</a> &rsaquo; Gear Pair Generator</div>
+    <h2>Gear Pair Generator</h2>
+    <p class="lead">Designs two meshing involute spur gears with different tooth counts. Print 1:1, glue to plywood, cut with a bandsaw.</p>
 
-    <form class="controls" id="gearForm" onsubmit="return false;">
-      <div class="field">
-        <label for="teeth">Tooth count (N)</label>
-        <input type="number" id="teeth" min="6" max="200" step="1" value="20">
-      </div>
-      <div class="field">
-        <label for="module">Module (mm per tooth)</label>
-        <input type="number" id="module" min="0.5" max="20" step="0.1" value="3">
-      </div>
-      <div class="field">
-        <label for="pressure">Pressure angle (deg)</label>
-        <select id="pressure">
-          <option value="14.5">14.5&deg;</option>
-          <option value="20" selected>20&deg;</option>
-          <option value="25">25&deg;</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="bore">Bore diameter (mm)</label>
-        <input type="number" id="bore" min="0" max="50" step="0.5" value="6">
-      </div>
+    <form class="controls pair-controls" id="gearForm" onsubmit="return false;">
+      <fieldset>
+        <legend>Shared (both gears)</legend>
+        <div class="field">
+          <label for="spacing">Tooth spacing (mm)</label>
+          <input type="number" id="spacing" min="3" max="40" step="0.5" value="10">
+        </div>
+        <div class="field">
+          <label for="pressure">Pressure angle (deg)</label>
+          <input type="number" id="pressure" min="10" max="30" step="0.5" value="20">
+        </div>
+        <div class="field">
+          <label for="backlash">Backlash (mm)</label>
+          <input type="number" id="backlash" min="0" max="2" step="0.05" value="0.2">
+        </div>
+        <div class="field">
+          <label for="material">Material thickness (mm)</label>
+          <input type="number" id="material" min="3" max="25" step="0.5" value="6">
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Gear 1 (left)</legend>
+        <div class="field">
+          <label for="teeth1">Tooth count</label>
+          <input type="number" id="teeth1" min="6" max="200" step="1" value="12">
+        </div>
+        <div class="field">
+          <label for="bore1">Bore diameter (mm)</label>
+          <input type="number" id="bore1" min="0" max="50" step="0.5" value="6">
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Gear 2 (right)</legend>
+        <div class="field">
+          <label for="teeth2">Tooth count</label>
+          <input type="number" id="teeth2" min="6" max="200" step="1" value="30">
+        </div>
+        <div class="field">
+          <label for="bore2">Bore diameter (mm)</label>
+          <input type="number" id="bore2" min="0" max="50" step="0.5" value="6">
+        </div>
+      </fieldset>
     </form>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="tShowPitch" checked> Pitch circles</label>
+      <label><input type="checkbox" id="tShowGrid"> 1 cm grid</label>
+      <label><input type="checkbox" id="tShowLOC"> Line of contact</label>
+      <label><input type="checkbox" id="tPrintMode"> Print mode (one gear at a time)</label>
+    </div>
 
     <div class="actions">
       <button id="genBtn">Generate</button>
-      <button class="secondary" id="downloadSvg">Download SVG</button>
+      <button class="secondary" id="dlBoth">Download pair SVG</button>
+      <button class="secondary" id="dlGear1">Download gear 1 SVG</button>
+      <button class="secondary" id="dlGear2">Download gear 2 SVG</button>
       <button class="secondary" id="printBtn">Print</button>
     </div>
+
+    <div id="warnings"></div>
 
     <div class="output" id="output" hidden>
       <div class="stats" id="stats"></div>
       <div id="svgHost"></div>
+      <div id="svgHost2" hidden></div>
     </div>
 
-    <h3>Notes</h3>
-    <p>The template prints at true size — 1&nbsp;mm in the SVG equals 1&nbsp;mm on paper, provided your printer is set to 100% (not "fit to page"). Verify with a ruler against the cross-hairs after the first print.</p>
-    <p>Two meshing gears must share the same <em>module</em> and <em>pressure angle</em>. The center distance between them is <code>(N₁&nbsp;+&nbsp;N₂)&nbsp;×&nbsp;module&nbsp;/&nbsp;2</code>.</p>
+    <h3>How to use the templates</h3>
+    <p>Print this page at 100% scale (not "fit to page"). Verify by measuring a pitch circle against the printed gear with a ruler. Glue each gear onto your plywood with a thin layer of adhesive, drill the bore holes first, then cut along the outline with a bandsaw. Sand to the line.</p>
+    <p>For 6&nbsp;mm plywood, tooth spacing under 7&nbsp;mm will produce fragile teeth that can chip. The tool warns you if your settings are too aggressive.</p>
+    <p>Two gears mesh only if they share the same <strong>tooth spacing</strong> and <strong>pressure angle</strong>. The center distance between their shafts is shown below.</p>
   </main>
 
   <footer class="site">
@@ -66,58 +113,131 @@
   </footer>
 
   <script type="module">
-    import { renderGearSVG } from './gear.js';
+    import { renderGearPair, renderSingleGear } from './gear.js';
 
     const $ = (id) => document.getElementById(id);
-    const output = $('output');
-    const svgHost = $('svgHost');
-    const statsEl = $('stats');
+    const out = $('output'), svgHost = $('svgHost'), svgHost2 = $('svgHost2');
+    const statsEl = $('stats'), warnings = $('warnings');
 
     function getInputs() {
+      const spacing = Math.max(3, parseFloat($('spacing').value) || 10);   // circular pitch
       return {
-        N: Math.max(6, Math.min(200, parseInt($('teeth').value, 10) || 20)),
-        m: Math.max(0.5, Math.min(20, parseFloat($('module').value) || 3)),
-        alphaDeg: parseFloat($('pressure').value) || 20,
-        bore: Math.max(0, parseFloat($('bore').value) || 0),
+        spacing,
+        m: spacing / Math.PI,                                              // module = p / π
+        alphaDeg: Math.max(10, parseFloat($('pressure').value) || 20),
+        backlash: Math.max(0, parseFloat($('backlash').value) || 0),
+        material: Math.max(0, parseFloat($('material').value) || 6),
+        N1: Math.max(4, parseInt($('teeth1').value, 10) || 12),
+        N2: Math.max(4, parseInt($('teeth2').value, 10) || 30),
+        bore1: Math.max(0, parseFloat($('bore1').value) || 0),
+        bore2: Math.max(0, parseFloat($('bore2').value) || 0),
+        showPitch: $('tShowPitch').checked,
+        showGrid: $('tShowGrid').checked,
+        showLineOfContact: $('tShowLOC').checked,
+        printMode: $('tPrintMode').checked,
       };
     }
 
-    function generate() {
-      const { N, m, alphaDeg, bore } = getInputs();
-      const { svg, geometry: g } = renderGearSVG(N, m, alphaDeg, { boreDiameter: bore });
-      svgHost.innerHTML = svg;
-      output.hidden = false;
+    function fmt(n, d = 2) { return n.toFixed(d) + ' mm'; }
 
-      const fmt = (n, d = 2) => n.toFixed(d) + ' mm';
+    function generate() {
+      const i = getInputs();
+      const { svg, g1, g2, centerDistance, ratio } = renderGearPair(
+        i.N1, i.N2, i.m, i.alphaDeg,
+        {
+          backlash: i.backlash,
+          bore1: i.bore1,
+          bore2: i.bore2,
+          showPitch: i.showPitch,
+          showGrid: i.showGrid,
+          showLineOfContact: i.showLineOfContact,
+        }
+      );
+
+      if (i.printMode) {
+        // Render each gear standalone, stacked for printing.
+        const g1Svg = renderSingleGear(i.N1, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore1, showPitch: i.showPitch });
+        const g2Svg = renderSingleGear(i.N2, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore2, showPitch: i.showPitch });
+        svgHost.innerHTML = g1Svg.svg;
+        svgHost2.innerHTML = g2Svg.svg;
+        svgHost2.hidden = false;
+      } else {
+        svgHost.innerHTML = svg;
+        svgHost2.hidden = true;
+        svgHost2.innerHTML = '';
+      }
+      out.hidden = false;
+
+      // Stats
       statsEl.innerHTML = `
-        <div><span class="k">Pitch dia</span><span class="v">${fmt(g.rp * 2)}</span></div>
-        <div><span class="k">Outside dia</span><span class="v">${fmt(g.raEff * 2)}</span></div>
-        <div><span class="k">Root dia</span><span class="v">${fmt(g.rf * 2)}</span></div>
-        <div><span class="k">Base dia</span><span class="v">${fmt(g.rb * 2)}</span></div>
-        <div><span class="k">Circular pitch</span><span class="v">${fmt(Math.PI * g.m)}</span></div>
-        ${g.pointedTip ? '<div><span class="k">Warning</span><span class="v" style="color:#b35;">Pointed teeth at this N</span></div>' : ''}
+        <div><span class="k">Gear 1 pitch dia</span><span class="v">${fmt(g1.rp * 2)}</span></div>
+        <div><span class="k">Gear 1 outside dia</span><span class="v">${fmt(g1.raEff * 2)}</span></div>
+        <div><span class="k">Gear 2 pitch dia</span><span class="v">${fmt(g2.rp * 2)}</span></div>
+        <div><span class="k">Gear 2 outside dia</span><span class="v">${fmt(g2.raEff * 2)}</span></div>
+        <div><span class="k">Center distance</span><span class="v">${fmt(centerDistance)}</span></div>
+        <div><span class="k">Ratio (G2/G1)</span><span class="v">${ratio.toFixed(3)}:1</span></div>
+        <div><span class="k">Module</span><span class="v">${i.m.toFixed(3)} mm</span></div>
+        <div><span class="k">Circular pitch</span><span class="v">${fmt(i.spacing)}</span></div>
       `;
+
+      // Warnings
+      const w = [];
+      // Tooth fragility on thin plywood: tooth thickness at pitch ≈ p/2, depth ≈ 2.25*m.
+      // Recommend tooth spacing >= material thickness + 2 mm so flank thickness > material.
+      if (i.spacing < i.material + 1) {
+        w.push(`<div class="warn">Tooth spacing (${i.spacing} mm) is small relative to material thickness (${i.material} mm). Teeth may snap. Try spacing &ge; ${(i.material + 2).toFixed(1)} mm.</div>`);
+      }
+      if (g1.pointedTip || g2.pointedTip) {
+        w.push(`<div class="warn">One or both gears have <strong>pointed teeth</strong> at this tooth count + pressure angle. Increase tooth count or pressure angle, or accept the pointed profile.</div>`);
+      }
+      if (i.N1 < 12 && i.alphaDeg < 20) {
+        w.push(`<div class="warn">Gear 1 has ${i.N1} teeth at ${i.alphaDeg}&deg; pressure angle &mdash; risk of undercut interference. Bump pressure angle to 20&deg;+ or increase tooth count.</div>`);
+      }
+      if (i.N2 < 12 && i.alphaDeg < 20) {
+        w.push(`<div class="warn">Gear 2 has ${i.N2} teeth at ${i.alphaDeg}&deg; pressure angle &mdash; risk of undercut interference.</div>`);
+      }
+      if (w.length === 0) {
+        w.push(`<div class="ok-note">Geometry looks good for ${i.material} mm plywood.</div>`);
+      }
+      warnings.innerHTML = w.join('');
     }
 
-    function downloadSvg() {
-      const { N, m, alphaDeg, bore } = getInputs();
-      const { svg } = renderGearSVG(N, m, alphaDeg, { boreDiameter: bore });
-      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    function downloadSvg(svgString, filename) {
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `gear_N${N}_m${m}_a${alphaDeg}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     }
 
     $('genBtn').addEventListener('click', generate);
-    $('downloadSvg').addEventListener('click', downloadSvg);
+    $('dlBoth').addEventListener('click', () => {
+      const i = getInputs();
+      const { svg } = renderGearPair(i.N1, i.N2, i.m, i.alphaDeg, {
+        backlash: i.backlash, bore1: i.bore1, bore2: i.bore2,
+        showPitch: i.showPitch, showGrid: i.showGrid, showLineOfContact: i.showLineOfContact,
+      });
+      downloadSvg(svg, `gear_pair_${i.N1}T_${i.N2}T_p${i.spacing}mm.svg`);
+    });
+    $('dlGear1').addEventListener('click', () => {
+      const i = getInputs();
+      const { svg } = renderSingleGear(i.N1, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore1, showPitch: i.showPitch });
+      downloadSvg(svg, `gear1_${i.N1}T_p${i.spacing}mm.svg`);
+    });
+    $('dlGear2').addEventListener('click', () => {
+      const i = getInputs();
+      const { svg } = renderSingleGear(i.N2, i.m, i.alphaDeg, { backlash: i.backlash, boreDiameter: i.bore2, showPitch: i.showPitch });
+      downloadSvg(svg, `gear2_${i.N2}T_p${i.spacing}mm.svg`);
+    });
     $('printBtn').addEventListener('click', () => window.print());
 
-    // Generate once on load
+    // Re-render on any input change
+    document.querySelectorAll('#gearForm input, #gearForm select, .toggles input').forEach(el => {
+      el.addEventListener('change', generate);
+      el.addEventListener('input', generate);
+    });
+
     generate();
   </script>
 </body>

@@ -97,21 +97,29 @@ Ok "Committed initial scaffold."
 # ---------------------------------------------------------------------------
 Section "Creating GitHub repo and pushing"
 
-# Does the repo already exist?
-$exists = $false
-gh repo view $repoSlug 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) { $exists = $true }
+# Try to create the repo; if it already exists, just attach a remote and push.
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 
-if ($exists) {
-    Info "Repo $repoSlug already exists on GitHub. Linking and pushing..."
-    git remote remove origin 2>$null
-    git remote add origin "https://github.com/$repoSlug.git"
-    git push -u origin main --force
-} else {
-    Info "Creating https://github.com/$repoSlug ..."
-    gh repo create $repoSlug --public --source=. --remote=origin --push
+Info "Creating https://github.com/$repoSlug (or pushing if it already exists)..."
+$createOut = gh repo create $repoSlug --public --source=. --remote=origin --push 2>&1
+$createExit = $LASTEXITCODE
+
+if ($createExit -ne 0) {
+    if ($createOut -match 'already exists' -or $createOut -match 'name already exists') {
+        Info "Repo exists. Linking remote and pushing..."
+        git remote remove origin 2>$null
+        git remote add origin "https://github.com/$repoSlug.git"
+        git push -u origin main --force 2>&1 | Out-Host
+        if ($LASTEXITCODE -ne 0) { Fail "Push failed."; $ErrorActionPreference = $prevEAP; Read-Host "Press Enter to exit"; exit 1 }
+    } else {
+        Fail "gh repo create failed:"
+        Write-Host $createOut
+        $ErrorActionPreference = $prevEAP
+        Read-Host "Press Enter to exit"; exit 1
+    }
 }
-if ($LASTEXITCODE -ne 0) { Fail "Push failed."; Read-Host "Press Enter to exit"; exit 1 }
+$ErrorActionPreference = $prevEAP
 Ok "Code pushed to $repoSlug."
 
 # ---------------------------------------------------------------------------
