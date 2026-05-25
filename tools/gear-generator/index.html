@@ -1,471 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gear Pair Generator - Geargen</title>
-  <link rel="stylesheet" href="../../css/style.css">
-  <style>
-    /* === Layout === */
-    main.workspace {
-      max-width: 1280px;
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 1.5rem;
-      padding: 1.5rem;
-      align-items: start;
-    }
-    @media (max-width: 960px) {
-      main.workspace { grid-template-columns: 1fr; }
-    }
-    .col-controls { position: sticky; top: 1rem; }
-    .col-visual { min-width: 0; }
-
-    /* === Cards === */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      box-shadow: 0 1px 3px rgba(94, 70, 30, 0.06), 0 4px 12px rgba(94, 70, 30, 0.04);
-      margin-bottom: 1rem;
-    }
-    .card-header {
-      padding: 0.7rem 1rem;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      color: #5c4329;
-      text-transform: uppercase;
-      background: linear-gradient(to bottom, #fdf8ee, #faf3e3);
-      border-radius: 10px 10px 0 0;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .card-body { padding: 0.9rem 1rem 1rem; }
-
-    /* === Inputs === */
-    .field { display: flex; flex-direction: column; margin-bottom: 0.6rem; font-size: 0.85rem; }
-    .field:last-child { margin-bottom: 0; }
-    .field label { color: var(--fg-soft); margin-bottom: 0.25rem; font-weight: 500; }
-    .field .row { display: flex; align-items: center; gap: 0.5rem; }
-    .field input[type=number], .field select {
-      font: inherit;
-      padding: 0.45rem 0.55rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: #fff;
-      width: 100%;
-    }
-    .field input[type=range] { flex: 1; }
-    .field input:focus, .field select:focus {
-      outline: 2px solid #c19a6b;
-      outline-offset: -1px;
-      border-color: #a07845;
-    }
-
-    /* === Two-gear color tags === */
-    .tag {
-      display: inline-block;
-      width: 0.7rem; height: 0.7rem;
-      border-radius: 50%;
-      vertical-align: middle;
-      margin-right: 0.4rem;
-      border: 1px solid rgba(0,0,0,0.2);
-    }
-    .tag.maple  { background: radial-gradient(circle at 30% 30%, #fde6c4, #f0d3a8 60%, #a07845); }
-    .tag.walnut { background: radial-gradient(circle at 30% 30%, #cda083, #b08968 60%, #5d3a1a); }
-
-    /* === Toggles === */
-    .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.8rem; font-size: 0.85rem; }
-    .toggles label { display: flex; align-items: center; gap: 0.45rem; cursor: pointer; color: var(--fg-soft); }
-    .toggles input { accent-color: #a07845; }
-
-    /* === Animation bar === */
-    .anim-bar {
-      display: flex; align-items: center; gap: 0.8rem;
-      padding: 0.6rem 1rem;
-      background: #fbf6ea;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 1rem;
-    }
-    .anim-bar button.play {
-      width: 42px; height: 42px; border-radius: 50%;
-      border: none; cursor: pointer;
-      background: linear-gradient(135deg, #8b6f3a, #6b5429);
-      color: white; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 6px rgba(94, 70, 30, 0.25);
-    }
-    .anim-bar button.play:hover { transform: translateY(-1px); }
-    .anim-bar .speed { flex: 1; display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--fg-soft); }
-    .anim-bar .speed-val { font-variant-numeric: tabular-nums; min-width: 2.8rem; text-align: right; color: var(--fg); font-weight: 600; }
-
-    /* === Visualization === */
-    .stage {
-      background: linear-gradient(180deg, #fefbf4, #fbf6ea);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(94, 70, 30, 0.08);
-      padding: 1rem;
-      min-height: 320px;
-    }
-    .stage svg { display: block; width: 100%; height: auto; max-height: 65vh; }
-
-    /* === Stats grid === */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 0.5rem;
-      padding: 0;
-      margin: 0;
-      list-style: none;
-    }
-    .stats-grid li {
-      background: #fbf6ea;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.55rem 0.7rem;
-      font-size: 0.85rem;
-    }
-    .stats-grid .k {
-      display: block;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--fg-soft);
-      margin-bottom: 0.15rem;
-    }
-    .stats-grid .v { font-weight: 600; font-variant-numeric: tabular-nums; color: #3a2814; }
-    .stats-grid li.g1 { border-left: 3px solid #a07845; }
-    .stats-grid li.g2 { border-left: 3px solid #5d3a1a; }
-    .stats-grid li.shared { border-left: 3px solid #2563eb; }
-
-    /* === Action bar === */
-    .actions-bar {
-      display: flex; flex-wrap: wrap; gap: 0.5rem;
-      margin-top: 0.75rem;
-    }
-    .actions-bar button {
-      font: inherit;
-      padding: 0.5rem 0.9rem;
-      border: 1px solid #a07845;
-      background: #a07845;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-    .actions-bar button.secondary {
-      background: white; color: #6b5429; border-color: #cdb592;
-    }
-    .actions-bar button:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(94, 70, 30, 0.15); }
-
-    /* === Warnings === */
-    .alerts { margin-top: 0.8rem; }
-    .alert {
-      padding: 0.55rem 0.8rem;
-      border-radius: 8px;
-      margin-bottom: 0.4rem;
-      font-size: 0.85rem;
-      border-left: 3px solid;
-    }
-    .alert.warn { background: #fff4e0; border-color: #d97706; color: #78350f; }
-    .alert.ok   { background: #ecfdf5; border-color: #10b981; color: #065f46; }
-
-    /* === Breadcrumb === */
-    .breadcrumb { padding: 1rem 1.5rem 0; max-width: 1280px; margin: 0 auto; }
-
-    /* === Print: hide everything except SVG === */
-    @media print {
-      header.site, footer.site, .col-controls, .anim-bar, .actions-bar, .alerts, .breadcrumb, .card-header, .tip { display: none !important; }
-      main.workspace { grid-template-columns: 1fr; padding: 0; max-width: none; }
-      .stage { border: none; box-shadow: none; padding: 0; background: white; }
-    }
-
-    .tip { font-size: 0.85rem; color: var(--fg-soft); margin-top: 0.8rem; padding: 0.6rem 0.8rem; background: #fbf6ea; border-radius: 6px; border-left: 3px solid #c19a6b; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear Chain Generator - Geargen</title>
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 1fr; gap: 1.25rem; padding: 1.25rem; align-items: start; }
+@media (max-width: 960px) { main.workspace { grid-template-columns: 1fr; } }
+.col-controls { position: sticky; top: 1rem; max-height: calc(100vh - 1.5rem); overflow-y: auto; padding-right: 0.4rem; }
+.col-visual { min-width: 0; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px rgba(94,70,30,0.06), 0 4px 12px rgba(94,70,30,0.04); margin-bottom: 0.85rem; }
+.card-header { padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; color: #5c4329; text-transform: uppercase; background: linear-gradient(to bottom, #fdf8ee, #faf3e3); border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.card-header .pill { font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 99px; background: #e5dbc4; color: #5c4329; letter-spacing: 0; text-transform: none; font-weight: 600; }
+.card-body { padding: 0.7rem 0.9rem 0.85rem; }
+.field { display: flex; flex-direction: column; margin-bottom: 0.45rem; font-size: 0.83rem; }
+.field:last-child { margin-bottom: 0; }
+.field label { color: var(--fg-soft); margin-bottom: 0.2rem; font-weight: 500; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.field input[type=number], .field select { font: inherit; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; width: 100%; }
+.field input:focus, .field select:focus { outline: 2px solid #c19a6b; outline-offset: -1px; border-color: #a07845; }
+.tag { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 50%; vertical-align: middle; margin-right: 0.4rem; border: 1px solid rgba(0,0,0,0.2); }
+.tag.maple  { background: radial-gradient(circle at 30% 30%, #fde6c4, #f0d3a8 60%, #a07845); }
+.tag.walnut { background: radial-gradient(circle at 30% 30%, #cda083, #b08968 60%, #5d3a1a); }
+.tag.cherry { background: radial-gradient(circle at 30% 30%, #ecb09a, #d18768 60%, #7a3a23); }
+.tag.oak    { background: radial-gradient(circle at 30% 30%, #e3c89a, #c9a87a 60%, #7a5b30); }
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 0.7rem; font-size: 0.82rem; }
+.toggles label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--fg-soft); }
+.toggles input { accent-color: #a07845; }
+.lock-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.55rem; background: #faf3e3; border-radius: 6px; margin-bottom: 0.4rem; font-size: 0.82rem; }
+.lock-row input[type=checkbox] { accent-color: #a07845; }
+.lock-row input[type=number] { width: 5rem; padding: 0.25rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; }
+.anim-bar { display: flex; align-items: center; gap: 0.8rem; padding: 0.55rem 0.9rem; background: #fbf6ea; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.85rem; }
+.anim-bar button.play { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; background: linear-gradient(135deg, #8b6f3a, #6b5429); color: white; font-size: 1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(94,70,30,0.25); }
+.anim-bar button.play.muted { background: #cdb592; }
+.anim-bar button.play:hover { transform: translateY(-1px); }
+.anim-bar .speed { flex: 1; display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--fg-soft); }
+.anim-bar .speed-val { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: right; color: var(--fg); font-weight: 600; }
+.stage { background: linear-gradient(180deg, #fefbf4, #fbf6ea); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(94,70,30,0.08); padding: 0.8rem; min-height: 340px; }
+.stage svg { display: block; width: 100%; height: auto; max-height: 64vh; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; padding: 0; margin: 0; list-style: none; }
+.stats-grid li { background: #fbf6ea; border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.65rem; font-size: 0.82rem; }
+.stats-grid .k { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-soft); margin-bottom: 0.1rem; }
+.stats-grid .v { font-weight: 600; font-variant-numeric: tabular-nums; color: #3a2814; }
+.stats-grid li.g1 { border-left: 3px solid #a07845; }
+.stats-grid li.g2 { border-left: 3px solid #5d3a1a; }
+.stats-grid li.g3 { border-left: 3px solid #7a3a23; }
+.stats-grid li.g4 { border-left: 3px solid #7a5b30; }
+.stats-grid li.shared { border-left: 3px solid #2563eb; }
+.actions-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+.actions-bar button { font: inherit; padding: 0.45rem 0.85rem; border: 1px solid #a07845; background: #a07845; color: white; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 500; }
+.actions-bar button.secondary { background: white; color: #6b5429; border-color: #cdb592; }
+.actions-bar button:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(94,70,30,0.15); }
+.alerts { margin-top: 0.7rem; }
+.alert { padding: 0.5rem 0.75rem; border-radius: 8px; margin-bottom: 0.35rem; font-size: 0.82rem; border-left: 3px solid; }
+.alert.warn { background: #fff4e0; border-color: #d97706; color: #78350f; }
+.alert.ok   { background: #ecfdf5; border-color: #10b981; color: #065f46; }
+.breadcrumb { padding: 1rem 1.25rem 0; max-width: 1280px; margin: 0 auto; }
+.tip { font-size: 0.82rem; color: var(--fg-soft); margin-top: 0.7rem; padding: 0.55rem 0.75rem; background: #fbf6ea; border-radius: 6px; border-left: 3px solid #c19a6b; }
+.gear-card.hidden { display: none; }
+@media print {
+  header.site, footer.site, .col-controls, .anim-bar, .actions-bar, .alerts, .breadcrumb, .card-header, .tip { display: none !important; }
+  main.workspace { grid-template-columns: 1fr; padding: 0; max-width: none; }
+  .stage { border: none; box-shadow: none; padding: 0; background: white; }
+}
+</style>
 </head>
 <body>
-  <header class="site">
-    <div class="inner">
-      <h1>Geargen</h1>
-      <nav>
-        <a href="../../index.html">Tools</a>
-        <a href="https://github.com/Ayoub-Torkian/geargen">GitHub</a>
-      </nav>
-    </div>
-  </header>
+<header class="site">
+  <div class="inner">
+    <h1>Geargen</h1>
+    <nav>
+      <a href="../../index.html">Tools</a>
+      <a href="https://github.com/Ayoub-Torkian/geargen">GitHub</a>
+    </nav>
+  </div>
+</header>
 
-  <div class="breadcrumb"><a href="../../index.html">Tools</a> &rsaquo; Gear Pair Generator</div>
+<div class="breadcrumb"><a href="../../index.html">Tools</a> &rsaquo; Gear Chain Generator</div>
 
-  <main class="workspace">
-    <!-- LEFT: controls -->
-    <div class="col-controls">
-      <form id="gearForm" onsubmit="return false;">
+<main class="workspace">
+  <div class="col-controls">
+    <form id="gearForm" onsubmit="return false;">
 
-        <div class="card">
-          <div class="card-header">Shared parameters</div>
-          <div class="card-body">
+      <div class="card">
+        <div class="card-header">Chain</div>
+        <div class="card-body">
+          <div class="field">
+            <label for="numGears">Number of gears</label>
+            <select id="numGears">
+              <option value="2" selected>2 gears</option>
+              <option value="3">3 gears (1 idler)</option>
+              <option value="4">4 gears (2 idlers)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Shared parameters</div>
+        <div class="card-body">
+          <div class="field-row">
             <div class="field">
               <label for="spacing">Tooth spacing (mm)</label>
               <input type="number" id="spacing" min="3" max="40" step="0.5" value="10">
             </div>
             <div class="field">
-              <label for="pressure">Pressure angle (deg)</label>
+              <label for="pressure">Pressure angle</label>
               <input type="number" id="pressure" min="10" max="30" step="0.5" value="20">
             </div>
+          </div>
+          <div class="field-row">
             <div class="field">
               <label for="backlash">Backlash (mm)</label>
               <input type="number" id="backlash" min="0" max="2" step="0.05" value="0.2">
             </div>
             <div class="field">
-              <label for="material">Material thickness (mm)</label>
+              <label for="material">Material (mm)</label>
               <input type="number" id="material" min="3" max="25" step="0.5" value="6">
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="card">
-          <div class="card-header"><span><span class="tag maple"></span>Gear 1 (maple)</span></div>
-          <div class="card-body">
+      <div class="card">
+        <div class="card-header"><span><span class="tag maple"></span>Gear 1 (maple)</span></div>
+        <div class="card-body">
+          <div class="lock-row">
+            <input type="checkbox" id="ratioLock">
+            <label for="ratioLock">Lock G1/G2 ratio</label>
+            <input type="number" id="ratioTarget" step="0.1" min="0.1" value="2.5" title="N2 / N1">
+            <span style="color:var(--fg-soft);font-size:0.75rem">: 1</span>
+          </div>
+          <div class="field-row">
             <div class="field">
               <label for="teeth1">Tooth count</label>
               <input type="number" id="teeth1" min="6" max="200" step="1" value="12">
             </div>
             <div class="field">
-              <label for="bore1">Bore diameter (mm)</label>
+              <label for="bore1">Bore (mm)</label>
               <input type="number" id="bore1" min="0" max="50" step="0.5" value="6">
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="card">
-          <div class="card-header"><span><span class="tag walnut"></span>Gear 2 (walnut)</span></div>
-          <div class="card-body">
+      <div class="card gear-card" id="card2">
+        <div class="card-header"><span><span class="tag walnut"></span>Gear 2 (walnut)</span></div>
+        <div class="card-body">
+          <div class="field-row">
             <div class="field">
               <label for="teeth2">Tooth count</label>
               <input type="number" id="teeth2" min="6" max="200" step="1" value="30">
             </div>
             <div class="field">
-              <label for="bore2">Bore diameter (mm)</label>
+              <label for="bore2">Bore (mm)</label>
               <input type="number" id="bore2" min="0" max="50" step="0.5" value="6">
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="card">
-          <div class="card-header">Display</div>
-          <div class="card-body">
-            <div class="toggles">
-              <label><input type="checkbox" id="tShow3D" checked> 3D thickness</label>
-              <label><input type="checkbox" id="tShowAnnot" checked> Labels</label>
-              <label><input type="checkbox" id="tShowPitch" checked> Pitch circles</label>
-              <label><input type="checkbox" id="tShowLOC"> Line of contact</label>
-              <label><input type="checkbox" id="tShowGrid"> 1 cm grid</label>
+      <div class="card gear-card hidden" id="card3">
+        <div class="card-header"><span><span class="tag cherry"></span>Gear 3 (cherry)</span><span class="pill">idler</span></div>
+        <div class="card-body">
+          <div class="field-row">
+            <div class="field">
+              <label for="teeth3">Tooth count</label>
+              <input type="number" id="teeth3" min="6" max="200" step="1" value="20">
+            </div>
+            <div class="field">
+              <label for="bore3">Bore (mm)</label>
+              <input type="number" id="bore3" min="0" max="50" step="0.5" value="6">
             </div>
           </div>
         </div>
-      </form>
-    </div>
-
-    <!-- RIGHT: visualization -->
-    <div class="col-visual">
-
-      <div class="anim-bar">
-        <button class="play" id="playBtn" title="Play / pause">&#9658;</button>
-        <div class="speed">
-          <span>Speed</span>
-          <input type="range" id="speed" min="-180" max="180" step="5" value="40">
-          <span class="speed-val" id="speedVal">40&deg;/s</span>
-        </div>
-        <button class="play" id="resetBtn" title="Reset rotation" style="background:#cdb592;">&#x21BA;</button>
       </div>
 
-      <div class="stage" id="stage"></div>
-
-      <div class="actions-bar">
-        <button class="secondary" id="dlBoth">Download pair SVG</button>
-        <button class="secondary" id="dlGear1">Download gear 1</button>
-        <button class="secondary" id="dlGear2">Download gear 2</button>
-        <button id="printBtn">Print template</button>
-      </div>
-
-      <div class="alerts" id="alerts"></div>
-
-      <div class="card" style="margin-top: 1rem;">
-        <div class="card-header">Computed dimensions</div>
+      <div class="card gear-card hidden" id="card4">
+        <div class="card-header"><span><span class="tag oak"></span>Gear 4 (oak)</span><span class="pill">output</span></div>
         <div class="card-body">
-          <ul class="stats-grid" id="stats"></ul>
+          <div class="field-row">
+            <div class="field">
+              <label for="teeth4">Tooth count</label>
+              <input type="number" id="teeth4" min="6" max="200" step="1" value="40">
+            </div>
+            <div class="field">
+              <label for="bore4">Bore (mm)</label>
+              <input type="number" id="bore4" min="0" max="50" step="0.5" value="6">
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="tip">Print uses monochrome outlines (no fills) so a bandsaw can follow the line cleanly. Verify the print scale by measuring a pitch circle with a ruler &mdash; should match the value shown above.</div>
+      <div class="card">
+        <div class="card-header">Display</div>
+        <div class="card-body">
+          <div class="toggles">
+            <label><input type="checkbox" id="tShow3D" checked> 3D thickness</label>
+            <label><input type="checkbox" id="tShowAnnot" checked> Labels</label>
+            <label><input type="checkbox" id="tShowPitch" checked> Pitch circles</label>
+            <label><input type="checkbox" id="tShowGrid"> 1 cm grid</label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-visual">
+    <div class="anim-bar">
+      <button class="play" id="playBtn" title="Play / pause">&#9658;</button>
+      <div class="speed">
+        <span>Speed</span>
+        <input type="range" id="speed" min="-180" max="180" step="5" value="40" style="flex:1">
+        <span class="speed-val" id="speedVal">40&deg;/s</span>
+      </div>
+      <button class="play muted" id="resetBtn" title="Reset rotation">&#x21BA;</button>
     </div>
-  </main>
 
-  <footer class="site">
-    Inspired by <a href="https://woodgears.ca">woodgears.ca</a>. Source on <a href="https://github.com/Ayoub-Torkian/geargen">GitHub</a>.
-  </footer>
+    <div class="stage" id="stage"></div>
 
-  <script type="module">
-    import { renderGearPair, renderSingleGear } from './gear.js';
+    <div class="actions-bar">
+      <button class="secondary" id="dlChain">Download chain SVG</button>
+      <button class="secondary" id="dlEach">Download each gear</button>
+      <button id="printBtn">Print template</button>
+    </div>
 
-    const $ = id => document.getElementById(id);
-    const stage = $('stage'), statsEl = $('stats'), alertsEl = $('alerts');
+    <div class="alerts" id="alerts"></div>
 
-    let lastResult = null;     // last pair result (svg, g1, g2, cd, ratio, gear2PhaseDeg)
-    let baseTheta1 = 0;        // gear 1 base rotation (degrees), advanced by animation
+    <div class="card" style="margin-top: 1rem;">
+      <div class="card-header">Computed dimensions</div>
+      <div class="card-body"><ul class="stats-grid" id="stats"></ul></div>
+    </div>
 
-    function getInputs() {
-      const spacing = Math.max(3, parseFloat($('spacing').value) || 10);
-      return {
-        spacing,
-        m: spacing / Math.PI,
-        alphaDeg: Math.max(10, parseFloat($('pressure').value) || 20),
-        backlash: Math.max(0, parseFloat($('backlash').value) || 0),
-        material: Math.max(0, parseFloat($('material').value) || 6),
-        N1: Math.max(4, parseInt($('teeth1').value, 10) || 12),
-        N2: Math.max(4, parseInt($('teeth2').value, 10) || 30),
-        bore1: Math.max(0, parseFloat($('bore1').value) || 0),
-        bore2: Math.max(0, parseFloat($('bore2').value) || 0),
-        showPitch: $('tShowPitch').checked,
-        showGrid: $('tShowGrid').checked,
-        showLineOfContact: $('tShowLOC').checked,
-        showAnnotations: $('tShowAnnot').checked,
-        show3D: $('tShow3D').checked,
-      };
-    }
-    const fmt = (n, d=2) => n.toFixed(d) + ' mm';
+    <div class="tip">Print uses monochrome outlines (no fills) for clean bandsaw tracing. Verify scale by measuring a pitch circle. For 3+ gears, the middle ones are idlers - they don't change the total ratio but reverse rotation direction.</div>
+  </div>
+</main>
 
-    function generate() {
-      const i = getInputs();
-      lastResult = renderGearPair(i.N1, i.N2, i.m, i.alphaDeg, {
-        style: 'preview',
-        backlash: i.backlash,
-        bore1: i.bore1, bore2: i.bore2,
-        showPitch: i.showPitch,
-        showGrid: i.showGrid,
-        showLineOfContact: i.showLineOfContact,
-        showAnnotations: i.showAnnotations,
-        depth: i.show3D ? i.material : 0,
-      });
-      stage.innerHTML = lastResult.svg;
-      applyRotation();
-      renderStats(i, lastResult);
-      renderAlerts(i, lastResult);
-    }
+<footer class="site">Inspired by <a href="https://woodgears.ca">woodgears.ca</a>. Source on <a href="https://github.com/Ayoub-Torkian/geargen">GitHub</a>.</footer>
 
-    function applyRotation() {
-      if (!lastResult) return;
-      const { g1, g2, centerDistance, gear2PhaseDeg, depthDX = 0, depthDY = 0 } = lastResult;
-      // External mesh: gears rotate in opposite directions; gear 2 speed = -N1/N2 of gear 1.
-      const theta1 = baseTheta1;
-      const theta2 = gear2PhaseDeg - theta1 * (g1.N / g2.N);
-      const f1 = document.getElementById('gear1Group');
-      const f2 = document.getElementById('gear2Group');
-      const b1 = document.getElementById('gear1GroupBack');
-      const b2 = document.getElementById('gear2GroupBack');
-      if (f1) f1.setAttribute('transform', `translate(0 0) rotate(${theta1})`);
-      if (f2) f2.setAttribute('transform', `translate(${centerDistance} 0) rotate(${theta2})`);
-      if (b1) b1.setAttribute('transform', `translate(${depthDX} ${depthDY}) rotate(${theta1})`);
-      if (b2) b2.setAttribute('transform', `translate(${centerDistance + depthDX} ${depthDY}) rotate(${theta2})`);
-    }
+<script type="module">
+import { renderGearChain, renderSingleGear } from './gear.js';
 
-    function renderStats(i, r) {
-      statsEl.innerHTML = `
-        <li class="g1"><span class="k">Gear 1 pitch dia</span><span class="v">${fmt(r.g1.rp * 2)}</span></li>
-        <li class="g1"><span class="k">Gear 1 outside dia</span><span class="v">${fmt(r.g1.raEff * 2)}</span></li>
-        <li class="g1"><span class="k">Gear 1 root dia</span><span class="v">${fmt(r.g1.rf * 2)}</span></li>
-        <li class="g2"><span class="k">Gear 2 pitch dia</span><span class="v">${fmt(r.g2.rp * 2)}</span></li>
-        <li class="g2"><span class="k">Gear 2 outside dia</span><span class="v">${fmt(r.g2.raEff * 2)}</span></li>
-        <li class="g2"><span class="k">Gear 2 root dia</span><span class="v">${fmt(r.g2.rf * 2)}</span></li>
-        <li class="shared"><span class="k">Center distance</span><span class="v">${fmt(r.centerDistance)}</span></li>
-        <li class="shared"><span class="k">Ratio (G2/G1)</span><span class="v">${r.ratio.toFixed(3)} : 1</span></li>
-        <li class="shared"><span class="k">Module</span><span class="v">${i.m.toFixed(3)} mm</span></li>
-        <li class="shared"><span class="k">Circular pitch</span><span class="v">${fmt(i.spacing)}</span></li>
-      `;
-    }
+const $ = id => document.getElementById(id);
+const stage = $('stage'), statsEl = $('stats'), alertsEl = $('alerts');
+let lastResult = null;
+let baseTheta1 = 0;
+let suppressLockSync = false;
 
-    function renderAlerts(i, r) {
-      const w = [];
-      if (i.spacing < i.material + 1) {
-        w.push(`<div class="alert warn">Tooth spacing (${i.spacing} mm) is small for ${i.material} mm plywood. Try &ge; ${(i.material + 2).toFixed(1)} mm to avoid fragile teeth.</div>`);
-      }
-      if (r.g1.pointedTip || r.g2.pointedTip) {
-        w.push(`<div class="alert warn">Pointed teeth at this tooth count + pressure angle. Increase pressure angle or tooth count.</div>`);
-      }
-      if (i.N1 < 12 && i.alphaDeg < 20) {
-        w.push(`<div class="alert warn">Gear 1 has only ${i.N1} teeth at ${i.alphaDeg}&deg; &mdash; risk of undercut. Try 20&deg;+.</div>`);
-      }
-      if (i.N2 < 12 && i.alphaDeg < 20) {
-        w.push(`<div class="alert warn">Gear 2 has only ${i.N2} teeth at ${i.alphaDeg}&deg; &mdash; risk of undercut.</div>`);
-      }
-      if (w.length === 0) w.push(`<div class="alert ok">Geometry looks good for ${i.material} mm plywood.</div>`);
-      alertsEl.innerHTML = w.join('');
-    }
-
-    /* === Animation === */
-    let playing = false, lastTime = 0, speedDegPerSec = 40;
-
-    function tick(t) {
-      if (!playing) return;
-      if (lastTime) {
-        baseTheta1 = (baseTheta1 + (t - lastTime) * 0.001 * speedDegPerSec) % 360;
-        applyRotation();
-      }
-      lastTime = t;
-      requestAnimationFrame(tick);
-    }
-
-    $('playBtn').addEventListener('click', () => {
-      playing = !playing;
-      $('playBtn').innerHTML = playing ? '&#10074;&#10074;' : '&#9658;';
-      lastTime = 0;
-      if (playing) requestAnimationFrame(tick);
+function getInputs() {
+  const spacing = Math.max(3, parseFloat($('spacing').value) || 10);
+  const numGears = parseInt($('numGears').value, 10) || 2;
+  const specs = [];
+  for (let i = 1; i <= numGears; i++) {
+    specs.push({
+      N: Math.max(4, parseInt($(`teeth${i}`).value, 10) || 12),
+      bore: Math.max(0, parseFloat($(`bore${i}`).value) || 0),
     });
-    $('resetBtn').addEventListener('click', () => { baseTheta1 = 0; applyRotation(); });
-    $('speed').addEventListener('input', () => {
-      speedDegPerSec = parseFloat($('speed').value) || 0;
-      $('speedVal').textContent = `${speedDegPerSec.toFixed(0)}°/s`;
-    });
+  }
+  return {
+    numGears, specs, spacing,
+    m: spacing / Math.PI,
+    alphaDeg: Math.max(10, parseFloat($('pressure').value) || 20),
+    backlash: Math.max(0, parseFloat($('backlash').value) || 0),
+    material: Math.max(0, parseFloat($('material').value) || 6),
+    showPitch: $('tShowPitch').checked,
+    showGrid: $('tShowGrid').checked,
+    showAnnotations: $('tShowAnnot').checked,
+    show3D: $('tShow3D').checked,
+    ratioLocked: $('ratioLock').checked,
+    ratioTarget: Math.max(0.1, parseFloat($('ratioTarget').value) || 2.5),
+  };
+}
 
-    /* === Download === */
-    function dl(svgString, filename) {
-      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    }
-    $('dlBoth').addEventListener('click', () => {
-      const i = getInputs();
-      const { svg } = renderGearPair(i.N1, i.N2, i.m, i.alphaDeg, {
-        style: 'print', backlash: i.backlash, bore1: i.bore1, bore2: i.bore2,
-        showPitch: false, showGrid: false, showLineOfContact: false, showAnnotations: false,
-      });
-      dl(svg, `gear_pair_${i.N1}T_${i.N2}T_p${i.spacing}mm.svg`);
-    });
-    $('dlGear1').addEventListener('click', () => {
-      const i = getInputs();
-      const { svg } = renderSingleGear(i.N1, i.m, i.alphaDeg, { style:'print', backlash:i.backlash, boreDiameter:i.bore1, showPitch:false });
-      dl(svg, `gear1_${i.N1}T_p${i.spacing}mm.svg`);
-    });
-    $('dlGear2').addEventListener('click', () => {
-      const i = getInputs();
-      const { svg } = renderSingleGear(i.N2, i.m, i.alphaDeg, { style:'print', backlash:i.backlash, boreDiameter:i.bore2, showPitch:false });
-      dl(svg, `gear2_${i.N2}T_p${i.spacing}mm.svg`);
-    });
-    $('printBtn').addEventListener('click', () => window.print());
+const fmt = (n, d=2) => n.toFixed(d) + ' mm';
 
-    /* === Live update === */
-    document.querySelectorAll('#gearForm input').forEach(el => {
-      el.addEventListener('input', generate);
-      el.addEventListener('change', generate);
-    });
+function applyVisibility(numGears) {
+  $('card2').classList.toggle('hidden', numGears < 2);
+  $('card3').classList.toggle('hidden', numGears < 3);
+  $('card4').classList.toggle('hidden', numGears < 4);
+}
 
+function generate() {
+  const i = getInputs();
+  applyVisibility(i.numGears);
+  lastResult = renderGearChain(i.specs, {
+    style: 'preview', m: i.m, alphaDeg: i.alphaDeg, backlash: i.backlash,
+    showPitch: i.showPitch, showGrid: i.showGrid, showAnnotations: i.showAnnotations,
+    depth: i.show3D ? i.material : 0,
+  });
+  stage.innerHTML = lastResult.svg;
+  applyRotation();
+  renderStats(i, lastResult);
+  renderAlerts(i, lastResult);
+}
+
+function applyRotation() {
+  if (!lastResult) return;
+  const { geoms, positions, phasesSvgDeg, depthDX = 0, depthDY = 0 } = lastResult;
+  const theta1 = baseTheta1;
+  for (let k = 0; k < geoms.length; k++) {
+    const dir = (k % 2 === 0) ? 1 : -1;
+    const thetaK = phasesSvgDeg[k] + dir * (geoms[0].N / geoms[k].N) * theta1;
+    const cxSvg = positions[k].cx;
+    const cySvg = -positions[k].cy;   // flip math y -> SVG
+    const front = document.getElementById(`gear${k+1}Group`);
+    const back  = document.getElementById(`gear${k+1}GroupBack`);
+    if (front) front.setAttribute('transform', `translate(${cxSvg} ${cySvg}) rotate(${thetaK})`);
+    if (back)  back.setAttribute('transform',  `translate(${(cxSvg + depthDX).toFixed(4)} ${(cySvg + depthDY).toFixed(4)}) rotate(${thetaK})`);
+  }
+}
+
+function renderStats(i, r) {
+  let html = '';
+  for (let k = 0; k < r.geoms.length; k++) {
+    const g = r.geoms[k];
+    html += `<li class="g${k+1}"><span class="k">Gear ${k+1}</span><span class="v">${g.N}T &middot; PD ${(g.rp*2).toFixed(1)} &middot; OD ${(g.raEff*2).toFixed(1)}</span></li>`;
+  }
+  for (let k = 0; k < r.centerDistances.length; k++) {
+    html += `<li class="shared"><span class="k">C ${k+1}-${k+2}</span><span class="v">${fmt(r.centerDistances[k])}</span></li>`;
+  }
+  html += `<li class="shared"><span class="k">Total ratio</span><span class="v">${r.ratio.toFixed(3)} : 1</span></li>`;
+  html += `<li class="shared"><span class="k">Module</span><span class="v">${i.m.toFixed(3)} mm</span></li>`;
+  statsEl.innerHTML = html;
+}
+
+function renderAlerts(i, r) {
+  const w = [];
+  if (i.spacing < i.material + 1) w.push(`<div class="alert warn">Tooth spacing (${i.spacing} mm) is small for ${i.material} mm plywood. Try &ge; ${(i.material + 2).toFixed(1)} mm.</div>`);
+  for (let k = 0; k < r.geoms.length; k++) {
+    const g = r.geoms[k];
+    if (g.pointedTip) w.push(`<div class="alert warn">Gear ${k+1} has pointed teeth - increase pressure angle or tooth count.</div>`);
+    if (g.N < 12 && i.alphaDeg < 20) w.push(`<div class="alert warn">Gear ${k+1} has only ${g.N} teeth at ${i.alphaDeg}&deg; - risk of undercut. Try 20&deg;+.</div>`);
+  }
+  if (w.length === 0) w.push(`<div class="alert ok">Geometry looks good for ${i.material} mm plywood.</div>`);
+  alertsEl.innerHTML = w.join('');
+}
+
+/* === Ratio lock === */
+function syncRatioFrom(source) {
+  if (suppressLockSync) return;
+  if (!$('ratioLock').checked) return;
+  const target = parseFloat($('ratioTarget').value) || 2.5;
+  suppressLockSync = true;
+  if (source === 'g1') {
+    const n1 = parseInt($('teeth1').value, 10) || 12;
+    $('teeth2').value = Math.max(6, Math.round(n1 * target));
+  } else if (source === 'g2') {
+    const n2 = parseInt($('teeth2').value, 10) || 30;
+    $('teeth1').value = Math.max(6, Math.round(n2 / target));
+  } else if (source === 'target') {
+    const n1 = parseInt($('teeth1').value, 10) || 12;
+    $('teeth2').value = Math.max(6, Math.round(n1 * target));
+  } else if (source === 'lock-on') {
+    // When user just turned on the lock, derive target from current values
+    const n1 = parseInt($('teeth1').value, 10) || 12;
+    const n2 = parseInt($('teeth2').value, 10) || 30;
+    $('ratioTarget').value = (n2 / n1).toFixed(2);
+  }
+  suppressLockSync = false;
+}
+
+/* === Animation === */
+let playing = false, lastTime = 0, speedDegPerSec = 40;
+function tick(t) {
+  if (!playing) return;
+  if (lastTime) {
+    baseTheta1 = (baseTheta1 + (t - lastTime) * 0.001 * speedDegPerSec) % 360;
+    applyRotation();
+  }
+  lastTime = t;
+  requestAnimationFrame(tick);
+}
+$('playBtn').addEventListener('click', () => {
+  playing = !playing;
+  $('playBtn').innerHTML = playing ? '&#10074;&#10074;' : '&#9658;';
+  lastTime = 0;
+  if (playing) requestAnimationFrame(tick);
+});
+$('resetBtn').addEventListener('click', () => { baseTheta1 = 0; applyRotation(); });
+$('speed').addEventListener('input', () => { speedDegPerSec = parseFloat($('speed').value) || 0; $('speedVal').textContent = `${speedDegPerSec.toFixed(0)}°/s`; });
+
+/* === Download === */
+function dl(svg, fn) {
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fn;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+$('dlChain').addEventListener('click', () => {
+  const i = getInputs();
+  const r = renderGearChain(i.specs, { style: 'print', m: i.m, alphaDeg: i.alphaDeg, backlash: i.backlash, showPitch: false, showGrid: false, showAnnotations: false, depth: 0 });
+  dl(r.svg, `gear_chain_${i.specs.map(s=>s.N+'T').join('_')}_p${i.spacing}mm.svg`);
+});
+$('dlEach').addEventListener('click', () => {
+  const i = getInputs();
+  for (let k = 0; k < i.specs.length; k++) {
+    const s = i.specs[k];
+    const r = renderSingleGear(s.N, i.m, i.alphaDeg, { style: 'print', backlash: i.backlash, boreDiameter: s.bore, showPitch: false });
+    dl(r.svg, `gear${k+1}_${s.N}T_p${i.spacing}mm.svg`);
+  }
+});
+$('printBtn').addEventListener('click', () => window.print());
+
+/* === Live update === */
+document.querySelectorAll('#gearForm input, #gearForm select').forEach(el => {
+  el.addEventListener('input', (ev) => {
+    if (ev.target.id === 'teeth1') syncRatioFrom('g1');
+    else if (ev.target.id === 'teeth2') syncRatioFrom('g2');
+    else if (ev.target.id === 'ratioTarget') syncRatioFrom('target');
+    else if (ev.target.id === 'ratioLock' && ev.target.checked) syncRatioFrom('lock-on');
     generate();
-  </script>
+  });
+});
+
+generate();
+</script>
 </body>
 </html>
