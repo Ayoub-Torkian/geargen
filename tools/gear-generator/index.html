@@ -258,10 +258,11 @@
           <div class="card-header">Display</div>
           <div class="card-body">
             <div class="toggles">
+              <label><input type="checkbox" id="tShow3D" checked> 3D thickness</label>
+              <label><input type="checkbox" id="tShowAnnot" checked> Labels</label>
               <label><input type="checkbox" id="tShowPitch" checked> Pitch circles</label>
               <label><input type="checkbox" id="tShowLOC"> Line of contact</label>
               <label><input type="checkbox" id="tShowGrid"> 1 cm grid</label>
-              <label><input type="checkbox" id="tShowAnnot" checked> Labels</label>
             </div>
           </div>
         </div>
@@ -332,6 +333,7 @@
         showGrid: $('tShowGrid').checked,
         showLineOfContact: $('tShowLOC').checked,
         showAnnotations: $('tShowAnnot').checked,
+        show3D: $('tShow3D').checked,
       };
     }
     const fmt = (n, d=2) => n.toFixed(d) + ' mm';
@@ -346,6 +348,7 @@
         showGrid: i.showGrid,
         showLineOfContact: i.showLineOfContact,
         showAnnotations: i.showAnnotations,
+        depth: i.show3D ? i.material : 0,
       });
       stage.innerHTML = lastResult.svg;
       applyRotation();
@@ -355,14 +358,18 @@
 
     function applyRotation() {
       if (!lastResult) return;
-      const { g1, g2, centerDistance, gear2PhaseDeg } = lastResult;
+      const { g1, g2, centerDistance, gear2PhaseDeg, depthDX = 0, depthDY = 0 } = lastResult;
       // External mesh: gears rotate in opposite directions; gear 2 speed = -N1/N2 of gear 1.
       const theta1 = baseTheta1;
       const theta2 = gear2PhaseDeg - theta1 * (g1.N / g2.N);
-      const el1 = document.getElementById('gear1Group');
-      const el2 = document.getElementById('gear2Group');
-      if (el1) el1.setAttribute('transform', `translate(0 0) rotate(${theta1})`);
-      if (el2) el2.setAttribute('transform', `translate(${centerDistance} 0) rotate(${theta2})`);
+      const f1 = document.getElementById('gear1Group');
+      const f2 = document.getElementById('gear2Group');
+      const b1 = document.getElementById('gear1GroupBack');
+      const b2 = document.getElementById('gear2GroupBack');
+      if (f1) f1.setAttribute('transform', `translate(0 0) rotate(${theta1})`);
+      if (f2) f2.setAttribute('transform', `translate(${centerDistance} 0) rotate(${theta2})`);
+      if (b1) b1.setAttribute('transform', `translate(${depthDX} ${depthDY}) rotate(${theta1})`);
+      if (b2) b2.setAttribute('transform', `translate(${centerDistance + depthDX} ${depthDY}) rotate(${theta2})`);
     }
 
     function renderStats(i, r) {
