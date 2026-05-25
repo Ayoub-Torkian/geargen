@@ -103,16 +103,10 @@ function computeChainPhases(Ns, chainAnglesRadMath) {
   return phases;
 }
 
-// Auto-compact chain angles (in MATH radians, CCW positive). SVG-flip happens at render.
+// Chain angles - straight line, all gears collinear.
 function autoChainAngles(numGears) {
-  // Each entry is the math angle from gear i to gear i+1.
-  // 2 gears: straight right.
-  // 3 gears: right, then up-right (60deg above).
-  // 4 gears: right, up-right, right.
-  if (numGears === 2) return [0];
-  if (numGears === 3) return [0, Math.PI / 3];
-  if (numGears === 4) return [0, Math.PI / 3, 0];
-  return [0];
+  // All zero -> each gear meshes the next horizontally. G1, G2, G3, G4 in sequence.
+  return new Array(numGears - 1).fill(0);
 }
 
 /* ===== Palette + defs ===== */
