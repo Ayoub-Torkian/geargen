@@ -64,6 +64,52 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
   main.workspace { grid-template-columns: 1fr; padding: 0; max-width: none; }
   .stage { border: none; box-shadow: none; padding: 0; background: white; }
 }
+
+
+/* ===== Compact + functional theme ===== */
+:root {
+  --m700:#8a5a28; --w700:#4a2e1a; --c700:#6b2a1a; --o700:#5e4520;
+  --teal:#0d9488; --amber:#d97706; --indigo:#6366f1;
+}
+main.workspace { padding: 0.85rem; gap: 0.9rem; max-width: 1240px; }
+.col-controls { padding-right: 0.2rem; }
+.card { background: #fff; border: 1px solid #e5d6bf; border-radius: 8px; margin-bottom: 0.5rem; box-shadow: 0 1px 2px rgba(94,70,30,0.04); overflow: hidden; }
+.card:hover { box-shadow: 0 2px 6px rgba(94,70,30,0.08); }
+.card-header { padding: 0.4rem 0.7rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #5c4329; background: #faf3e3; border-bottom: 1px solid #e5d6bf; border-left: 3px solid #c19a6b; }
+.card.chain  .card-header { border-left-color: var(--teal); }
+.card.shared .card-header { border-left-color: var(--amber); }
+.card.display .card-header { border-left-color: var(--indigo); }
+.card.g1     .card-header { border-left-color: var(--m700); }
+.card.g2     .card-header { border-left-color: var(--w700); }
+.card.g3     .card-header { border-left-color: var(--c700); }
+.card.g4     .card-header { border-left-color: var(--o700); }
+.card-body { padding: 0.55rem 0.7rem 0.65rem; }
+.field { margin-bottom: 0.35rem; font-size: 0.78rem; }
+.field label { font-size: 0.72rem; margin-bottom: 0.15rem; color: #6b5e48; font-weight: 600; }
+.field input[type=number], .field select { padding: 0.32rem 0.45rem; border: 1px solid #d8c8aa; border-radius: 4px; background: #fff; font-size: 0.82rem; font-weight: 500; color: #3a2814; }
+.field input:focus, .field select:focus { outline: none; border-color: #a07845; box-shadow: 0 0 0 2px rgba(193,154,107,0.2); }
+.field-row { gap: 0.4rem; }
+.toggles { gap: 0.25rem 0.55rem; font-size: 0.76rem; }
+.toggles label { padding: 0; background: none; border: 0; color: #5c4329; font-weight: 500; }
+.toggles label:hover { transform: none; box-shadow: none; }
+.toggles input { width: 0.9rem; height: 0.9rem; accent-color: var(--indigo); }
+.lock-row { padding: 0.3rem 0.45rem; font-size: 0.74rem; background: #faf3e3; }
+.lock-row input[type=number] { width: 3.4rem; padding: 0.15rem 0.3rem; font-size: 0.78rem; }
+.anim-bar { padding: 0.4rem 0.65rem; gap: 0.55rem; background: #faf3e3; }
+.anim-bar button.play { width: 32px; height: 32px; font-size: 0.85rem; }
+.anim-bar .speed { font-size: 0.74rem; }
+.actions-bar { gap: 0.35rem; margin-top: 0.55rem; }
+.actions-bar button { padding: 0.32rem 0.7rem; font-size: 0.76rem; font-weight: 500; border-radius: 4px; box-shadow: none; }
+.actions-bar button:hover { transform: none; }
+.stats-grid { gap: 0.35rem; }
+.stats-grid li { padding: 0.35rem 0.55rem; font-size: 0.76rem; border-radius: 4px; }
+.stats-grid .k { font-size: 0.62rem; }
+.stats-grid .v { font-size: 0.82rem; font-weight: 600; }
+.alert { padding: 0.4rem 0.6rem; font-size: 0.76rem; }
+.tip { padding: 0.4rem 0.6rem; font-size: 0.74rem; }
+.stage { padding: 0.55rem; min-height: 300px; }
+.card-header .pill { background: #e5dbc4; color: #5c4329; }
+
 </style>
 </head>
 <body>
@@ -83,7 +129,7 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
   <div class="col-controls">
     <form id="gearForm" onsubmit="return false;">
 
-      <div class="card">
+      <div class="card chain">
         <div class="card-header">Chain</div>
         <div class="card-body">
           <div class="field">
@@ -97,7 +143,7 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
         </div>
       </div>
 
-      <div class="card">
+      <div class="card shared">
         <div class="card-header">Shared parameters</div>
         <div class="card-body">
           <div class="field-row">
@@ -123,7 +169,7 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
         </div>
       </div>
 
-      <div class="card">
+      <div class="card gear g1">
         <div class="card-header"><span><span class="tag maple"></span>Gear 1 (maple)</span></div>
         <div class="card-body">
           <div class="lock-row">
@@ -145,7 +191,7 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
         </div>
       </div>
 
-      <div class="card gear-card" id="card2">
+      <div class="card gear-card gear g2" id="card2">
         <div class="card-header"><span><span class="tag walnut"></span>Gear 2 (walnut)</span></div>
         <div class="card-body">
           <div class="field-row">
@@ -161,7 +207,7 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
         </div>
       </div>
 
-      <div class="card gear-card hidden" id="card3">
+      <div class="card gear-card hidden gear g3" id="card3">
         <div class="card-header"><span><span class="tag cherry"></span>Gear 3 (cherry)</span><span class="pill">idler</span></div>
         <div class="card-body">
           <div class="field-row">
@@ -177,7 +223,7 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
         </div>
       </div>
 
-      <div class="card gear-card hidden" id="card4">
+      <div class="card gear-card hidden gear g4" id="card4">
         <div class="card-header"><span><span class="tag oak"></span>Gear 4 (oak)</span><span class="pill">output</span></div>
         <div class="card-body">
           <div class="field-row">
@@ -193,7 +239,7 @@ main.workspace { max-width: 1280px; display: grid; grid-template-columns: 360px 
         </div>
       </div>
 
-      <div class="card">
+      <div class="card display">
         <div class="card-header">Display</div>
         <div class="card-body">
           <div class="toggles">
